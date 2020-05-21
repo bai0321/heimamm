@@ -8,7 +8,7 @@
         <span class="sub-title">用户登录</span>
       </div>
       <!-- form表单部分 -->
-      <el-form :model="loginForm" :rules="rules" class="login-form">
+      <el-form :model="loginForm" :rules="rules" ref="loginFormRef" class="login-form">
         <el-form-item prop="phone">
           <el-input prefix-icon="el-icon-user" placeholder="请输入手机号" v-model="loginForm.phone"></el-input>
         </el-form-item>
@@ -26,11 +26,7 @@
               <el-input v-model="loginForm.code" prefix-icon="el-icon-key" placeholder="请输入验证码"></el-input>
             </el-col>
             <el-col :span="8">
-              <img
-                class="captcha"
-                src="http://134.175.59.248/heimamm/public/captcha?type=login"
-                alt
-              />
+              <img class="captcha" :src="codeURL" @click="getCode" />
             </el-col>
           </el-row>
         </el-form-item>
@@ -40,7 +36,7 @@
           <el-link type="primary" href="http://www.baidu.com">隐私条款</el-link>
         </el-form-item>
         <el-form-item>
-          <el-button style="width:100%" type="primary">登录</el-button>
+          <el-button style="width:100%" @click="loginClick" type="primary">登录</el-button>
         </el-form-item>
         <el-form-item>
           <el-button style="width:100%" type="primary">注册</el-button>
@@ -60,12 +56,13 @@ export default {
   name: "login",
   data() {
     return {
+      codeURL: process.env.VUE_APP_BASEURL + "/captcha?type=login",
       loginForm: {
         //模型
-        phone: "", //手机号
-        password: "", //密码
-        code: "" ,//验证码
-        isCheck:false //是否勾选了用户协议
+        phone: "18511111111", //手机号
+        password: "12345678", //密码
+        code: "", //验证码
+        isCheck: true //是否勾选了用户协议
       },
       rules: {
         //校验规则
@@ -111,6 +108,34 @@ export default {
         ]
       }
     };
+  },
+  methods: {
+    //获取验证码
+    getCode() {
+      // this.codeURL = process.env.VUE_APP_BASEURL + "/captcha?type=login&r=" + Math.random();
+      this.codeURL = process.env.VUE_APP_BASEURL + "/captcha?type=login&t=" + (new Date()-0);
+      // this.codeURL = process.env.VUE_APP_BASEURL + "/captcha?type=login&t=" + new Date();
+    },
+    loginClick() {
+      this.$refs.loginFormRef.validate(valid => {
+        // console.log(valid);
+        if (!valid) return;
+
+        //发请求给后台登录
+        this.$axios.post("/login", this.loginForm).then(res => {
+          if (res.data.code === 200) {
+            this.$message({
+              message: "登录成功",
+              type: "success"
+            });
+          } else {
+            this.$message.error(res.data.message);
+
+            this.codeURL = process.env.VUE_APP_BASEURL + "/captcha?type=login&t=" + (new Date()-0);
+          }
+        });
+      });
+    }
   }
 };
 </script>
